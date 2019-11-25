@@ -4,47 +4,42 @@
 [travis]: https://travis-ci.org/japaric/rust-cross
 
 # `rust-cross`
+[英文版原文](https://github.com/japaric/rust-cross)
 
-> Everything you need to know about cross compiling Rust programs!
+> 您需要了解有关交叉编译Rust程序的所有知识！
 
-If you want to set up your Rust toolchain as a cross compiler, you have come to the right place! I
-have documented all the necessary steps, plus the gotchas and common problems that you may find
-along the way.
+如果您想将您的Rust工具链设置位交叉编译器，那么您来对了地方！该文档记录了所有必要步骤，可能的陷阱和常见的问题。
 
-> Dear reader, if you spot a typo, a broken link, or a poorly worded/confusing sentence/paragraph
-> please open an issue pointing out the problem and I'll update the text. Pull requests fixing
-> typos or broken links are, of course, welcome!
+> 如果您发现输入错误，无效链接或者文法错误，请创建一个issue指出该问题，我将对文本进行更新。
 
-## TL;DR Ubuntu example
+## Ubuntu 示例
 
-Here are the commands necessary to set up a stable Rust toolchain as a cross compiler for ARMv7 (\*)
-devices on a fresh Ubuntu Trusty install. The goal of this example is to show that cross compilation
-is easy to setup and even easier to perform.
+在一个全新的Ubuntu环境，以下命令是将稳定的Rust工具链设置为ARMv7 (\*)设备交叉编译器所必须。
+这个例子的目的是展示交叉编译很容易设置，甚至更容易执行。
 
-(\*) ARM **v7**, these instructions won't work to cross compile for the Raspberry Pi (1), that's an
-ARM **v6** device.
+（*）ARM **v7**，这些指令无法为Raspberry Pi（树莓派）（即ARM **v6**设备）进行交叉编译。
 
 ```
-# Install Rust. rustup.rs heavily recommended. See https://www.rustup.rs/ for details
-# Alternatively, you can also use multirust. See https://github.com/brson/multirust for details
+# 安装Rust，强烈建议使用rustup.rs。 查看 https://www.rustup.rs/ 获取详细信息
+# 另外您也可以使用multirust. 查看 https://github.com/brson/multirust 获取详细信息
 $ curl https://sh.rustup.rs -sSf | sh
 
-# Step 0: Our target is an ARMv7 device, the triple for this target is `armv7-unknown-linux-gnueabihf`
+# 步骤 0: 我们的目标是ARMv7设备，该目标的triple是`armv7-unknown-linux-gnueabihf`
 
-# Step 1: Install the C cross toolchain
+# Step 1: 安装 C 交叉编译工具链
 $ sudo apt-get install -qq gcc-arm-linux-gnueabihf
 
-# Step 2: Install the cross compiled standard crates
+# Step 2: 安装交叉编译标准crates
 $ rustup target add armv7-unknown-linux-gnueabihf
 
-# Step 3: Configure cargo for cross compilation
+# Step 3: 配置cargo以进行交叉编译
 $ mkdir -p ~/.cargo
 $ cat >>~/.cargo/config <<EOF
 > [target.armv7-unknown-linux-gnueabihf]
 > linker = "arm-linux-gnueabihf-gcc"
 > EOF
 
-# Test cross compiling a Cargo project
+# 测试交叉编译Cargo项目
 $ cargo new --bin hello
 $ cd hello
 $ cargo build --target=armv7-unknown-linux-gnueabihf
@@ -52,19 +47,19 @@ $ cargo build --target=armv7-unknown-linux-gnueabihf
 $ file target/armv7-unknown-linux-gnueabihf/debug/hello
 hello: ELF 32-bit LSB  shared object, ARM, EABI5 version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.32, BuildID[sha1]=67b58f42db4842dafb8a15f8d47de87ca12cc7de, not stripped
 
-# Test the binary
+# 测试二进制文件
 $ scp target/armv7-unknown-linux-gnueabihf/debug/hello me@arm:~
 $ ssh me@arm:~ ./hello
 Hello, world!
 ```
 
-1\. 2. 3. You are now cross compiling!
+1\. 2. 3. 您现在正在交叉编译！
 
-For more examples check the [Travis CI builds](https://travis-ci.org/japaric/rust-cross).
+更多示例，请查看 [Travis CI builds](https://travis-ci.org/japaric/rust-cross).
 
-The rest of the guide will explain and generalize each step performed in the previous example.
+本指南的其余部分将解释和概括上一个示例中执行的每个步骤。
 
-## Table of Contents
+## 目录
 
 This guide is divided in two parts: The "main text" and advanced topics. The main text covers the
 simplest case: cross compiling Rust programs that depend on the `std` crate to a "supported
