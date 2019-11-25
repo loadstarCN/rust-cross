@@ -8,7 +8,7 @@
 
 > 您需要了解有关交叉编译Rust程序的所有知识！
 
-如果您想将您的Rust工具链设置位交叉编译器，那么您来对了地方！该文档记录了所有必要步骤，可能的陷阱和常见的问题。
+如果您想将Rust工具链设置位交叉编译器，那么来对地方了！该文档记录了所有必要步骤，可能的陷阱和常见的问题。
 
 > 如果您发现输入错误，无效链接或者文法错误，请创建一个issue指出该问题，我将对文本进行更新。
 
@@ -47,7 +47,7 @@ $ cargo build --target=armv7-unknown-linux-gnueabihf
 $ file target/armv7-unknown-linux-gnueabihf/debug/hello
 hello: ELF 32-bit LSB  shared object, ARM, EABI5 version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.32, BuildID[sha1]=67b58f42db4842dafb8a15f8d47de87ca12cc7de, not stripped
 
-# 测试二进制文件
+# 测试编译好的二进制文件
 $ scp target/armv7-unknown-linux-gnueabihf/debug/hello me@arm:~
 $ ssh me@arm:~ ./hello
 Hello, world!
@@ -61,29 +61,24 @@ Hello, world!
 
 ## 目录
 
-This guide is divided in two parts: The "main text" and advanced topics. The main text covers the
-simplest case: cross compiling Rust programs that depend on the `std` crate to a "supported
-target" where official builds are available. The advanced topics section covers `no_std` programs,
-target specification files, how to cross compile the "standard crates" and troubleshooting common
-problems.
+本指南分为两个部分：“正文”和高级主题。 正文包括最简单的情况：将依赖于`std` crate 的Rust程序交叉编译为“受支持目标系统”（提供官方版本）。高级主题部分介绍了`no_std`程序，目标系统格式文件，如何交叉编译“standard crates”和常见故障排除。
 
-The advanced topics section builds on top of the information explained in the main text. So, even if
-your use case is not the same as the one covered by the main text, you should still read the main
-text before jumping into the advanced topics section.
+高级主题部分以正文中解释的信息为基础。因此，即使您的用例与正文所述的用例不同，您仍应在进入“高级主题”部分之前阅读该部分内容。
 
-- [Terminology](#terminology)
-- [Requirements](#requirements)
-    - [The target triple](#the-target-triple)
-    - [C cross toolchain](#c-cross-toolchain)
-    - [Cross compiled Rust crates](#cross-compiled-rust-crates)
-- [Cross compiling with `rustc`](#cross-compiling-with-rustc)
-- [Cross compiling with `cargo`](#cross-compiling-with-cargo)
-- [Advanced topics](#advanced-topics)
-    - [Cross compiling the standard crate](#cross-compiling-the-standard-crates)
-    - [Installing the cross compiled standard crates](#installing-the-cross-compiled-standard-crates)
-    - [Target specification files](#target-specification-files)
-    - [Cross compiling `no_std` code](#cross-compiling-no_std-code)
-    - [Troubleshooting common problems](#troubleshooting-common-problems)
+
+- [术语](#terminology)
+- [必要条件](#requirements)
+    - [目标系统triple](#the-target-triple)
+    - [C 交叉编译工具链](#c-cross-toolchain)
+    - [交叉编译 Rust crates](#cross-compiled-rust-crates)
+- [使用 `rustc` 交叉编译](#cross-compiling-with-rustc)
+- [使用 `cargo` 交叉编译](#cross-compiling-with-cargo)
+- [高级主题](#advanced-topics)
+    - [交叉编译standard crate](#cross-compiling-the-standard-crates)
+    - [安装交叉编译standard crates](#installing-the-cross-compiled-standard-crates)
+    - [目标系统格式文件](#target-specification-files)
+    - [交叉编译 `no_std` 代码](#cross-compiling-no_std-code)
+    - [常见问题](#troubleshooting-common-problems)
         - [can't find crate](#cant-find-crate)
         - [crate incompatible with this version of rustc](#crate-incompatible-with-this-version-of-rustc)
         - [undefined reference](#undefined-reference)
@@ -91,21 +86,18 @@ text before jumping into the advanced topics section.
         - [`$symbol` not found](#symbol-not-found)
         - [illegal instruction](#illegal-instruction)
 - [FAQ](#faq)
-    - [I want to build binaries for Linux, Mac and Windows. How do I cross compile from Linux to Mac?](#i-want-to-build-binaries-for-linux-mac-and-windows-how-do-i-cross-compile-from-linux-to-mac)
-    - [How do I compile a fully statically linked Rust binary](#how-do-i-compile-a-fully-statically-linked-rust-binaries)
+    - [我想为Linux，Mac和Windows构建二进制文件。 如何从Linux交叉编译到Mac？](#i-want-to-build-binaries-for-linux-mac-and-windows-how-do-i-cross-compile-from-linux-to-mac)
+    - [如何编译完全静态链接的Rust二进制文件](#how-do-i-compile-a-fully-statically-linked-rust-binaries)
 - [License](#license)
-    - [Contribution](#contribution)
+    - [贡献](#contribution)
 
-## Terminology
+## 术语
 
-Let's make sure we are talking the same language by defining some terms first!
+首先定义一些术语，以确保我们使用的是同一种语言！
 
-In its most basic form, cross compiling involves two different systems/computers/devices. A **host**
-system where the program is compiled, and a **target** system where the compiled program gets
-executed.
+交叉编译最基本的形式涉及两个不同的系统/计算机/设备。 编译程序的 **本地** 系统和执行编译后的程序的 **目标** 系统。
 
-For example, if you cross compile a Rust program on your laptop to execute it on a Raspberry Pi 2
-(RPi2). Then your laptop is the host, and the RPi2 is the target.
+例如，如果您在笔记本电脑上交叉编译Rust程序以在Raspberry Pi 2上执行该程序（RPi2）。那么您的笔记本电脑就是本地系统，而RPi2是目标系统。
 
 However, a (cross) compiler doesn't produce a binary that only works on a single system (e.g. the
 RPi2). The produced binary can also be executed on several other systems (e.g. the ODROIDs) that
@@ -135,28 +127,26 @@ a triple is `x86_64-apple-darwin`, where:
 **NOTE** From now on, I'm going to overload the term **target** to mean a single target system, and
 also to refer to a set of systems with shared characteristics specified by some triple.
 
-## Requirements
+## 必要条件
 
-To compile a Rust program we need 4 things:
+要编译Rust程序，我们需要做4件事：
 
-- Find out what's the triple for the target system.
-- A `gcc` cross compiler, because `rustc` uses `gcc` to ["link"] stuff together.
-- C dependencies, usually "libc", cross compiled for the target system.
-- Rust dependencies, usually the `std` crate, cross compiled for the target system.
+- 找出目标系统的triple。
+- 一个`gcc`交叉编译器，因为`rustc`使用`gcc`将程序[链接]在一起。
+- C依赖关系（通常是“ libc”）针对目标系统交叉编译。
+- Rust依赖关系，通常是`std` crate，是为目标系统交叉编译的。
 
 ["link"]: https://en.wikipedia.org/wiki/Linker_(computing)
 
-### The target triple
+### 目标系统triple
 
-To find out the triple for your target, you first need to figure out these four bits of information
-about the target:
+要找出目标系统的triple，您首先需要弄清楚目标系统四个信息：
 
-- Architecture: On UNIXy systems, you can find this with the command `uname -m`.
-- Vendor: On linux: usually `unknown`. On windows: `pc`. On OSX/iOS: `apple`
-- System: On UNIXy systems, you can find this with the command `uname -s`
-- ABI: On Linux, this refers to the libc implementation which you can find out with `ldd --version`.
-    Mac and \*BSD systems don't provide multiple ABIs, so this field is omitted. On Windows, AFAIK
-    there are only two ABIs: gnu and msvc.
+- 架构: 在类Unix系统上，您可以使用 `uname -m`命令查看。
+- 供应商: Linux: 通常是 `unknown`. Windows: `pc`. OSX/iOS: `apple`
+- 系统: 在类Unix系统上，您可以使用 `uname -s`命令查看。
+- ABI: 在Linux上，这是指libc实现，您可以通过 `ldd --version`命令查看。
+    Mac 和 \*BSD 系统不提供multiple ABIs, 因此此字段被忽略. 在Windows, AFAIK 只有两个 ABIs: gnu 和 msvc.
 
 Next you need to compare this information against the targets supported by `rustc`, and check if
 there's a match. If you have a nightly-2016-02-14, 1.8.0-beta.1 or newer `rustc` you can use the
