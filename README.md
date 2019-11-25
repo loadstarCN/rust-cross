@@ -4,7 +4,7 @@
 [travis]: https://travis-ci.org/japaric/rust-cross
 
 # `rust-cross`
-[英文版原文](https://github.com/japaric/rust-cross)
+陆续翻译过程中... 在此之前请直接查看[英文版原文](https://github.com/japaric/rust-cross)
 
 > 您需要了解有关交叉编译Rust程序的所有知识！
 
@@ -15,7 +15,7 @@
 ## Ubuntu 示例
 
 在一个全新的Ubuntu环境，以下命令是将稳定的Rust工具链设置为ARMv7 (\*)设备交叉编译器所必须。
-这个例子的目的是展示交叉编译很容易设置，甚至更容易执行。
+这个例子的目的是展示交叉编译的设置和执行是非常容易的。
 
 （*）ARM **v7**，这些指令无法为Raspberry Pi（树莓派）（即ARM **v6**设备）进行交叉编译。
 
@@ -99,33 +99,30 @@ Hello, world!
 
 例如，如果您在笔记本电脑上交叉编译Rust程序以在Raspberry Pi 2上执行该程序（RPi2）。那么您的笔记本电脑就是本地系统，而RPi2是目标系统。
 
-However, a (cross) compiler doesn't produce a binary that only works on a single system (e.g. the
-RPi2). The produced binary can also be executed on several other systems (e.g. the ODROIDs) that
-share some characteristics like their architecture (e.g. ARM) and their Operating System (e.g.
-Linux). To refer to this set of systems with shared characteristics we use a string called a
-**triple**.
+但是，（交叉）编译器不会生成仅在单个系统上运行的二进制文件（例如
+RPi2）。生成的二进制文件也可以在其他共享某些特性的系统（例如 ODROIDs）上执行，比如它们的体系结构（例如 ARM）和操作系统（例如 Linux）。 为了引用具有共享特征的这套系统，我们使用一个称为 **triple** 的字符串。
 
-Triples are usually formatted as follows: `{arch}-{vendor}-{sys}-{abi}`. For example, the triple
-`arm-unknown-linux-gnueabihf` refers to the systems that share these characteristics:
+
+Triples 通常有如下格式: `{arch}-{vendor}-{sys}-{abi}`。
+24/5000
+例如 triple
+`arm-unknown-linux-gnueabihf` 指具有这些特征的系统:
 
 - architecture: `arm`.
-- vendor: `unknown`. In this case, no vendor was specified and/or is not important.
+- vendor: `unknown`. 在这种情况下，未指定任何供应商 和/或 并不重要。
 - system: `linux`.
-- ABI: `gnueabihf`. `gnueabihf` indicates that the system uses `glibc` as its C standard library
-    (libc) implementation and has hardware accelerated floating point arithmetic (i.e. an FPU).
+- ABI: `gnueabihf`. `gnueabihf` 表示系统使用`glibc`作为其C标准库（libc）的实现，并具有硬件加速的浮点运算（即FPU）。
 
-And systems like the RPi2, the ODROIDs, and pretty much every ARMv7 dev board that runs GNU/Linux
-belongs to this triple.
+诸如RPi2，ODROIDs之类的系统以及几乎每个运行GNU / Linux的ARMv7开发板都属于这个triple。
 
-Some triples omit the vendor or the abi component so they are actually "triples". An example of such
-a triple is `x86_64-apple-darwin`, where:
+一些三元组省略了供应商或abi组件，因此它们实际上是真正的“三元组”。其中一个例子是 `x86_64-apple-darwin`, 这里:
 
 - architecture: `x86_64`.
 - vendor: `apple`.
 - system: `darwin`.
 
-**NOTE** From now on, I'm going to overload the term **target** to mean a single target system, and
-also to refer to a set of systems with shared characteristics specified by some triple.
+**NOTE** 从现在开始，我将重载术语 **target** 以表示单个目标系统，并且也指一组由某些triple指定的具有共享特征的系统。
+
 
 ## 必要条件
 
@@ -142,16 +139,14 @@ also to refer to a set of systems with shared characteristics specified by some 
 
 要找出目标系统的triple，您首先需要弄清楚目标系统四个信息：
 
-- 架构: 在类Unix系统上，您可以使用 `uname -m`命令查看。
-- 供应商: Linux: 通常是 `unknown`. Windows: `pc`. OSX/iOS: `apple`
-- 系统: 在类Unix系统上，您可以使用 `uname -s`命令查看。
+- architecture: 在类Unix系统上，您可以使用 `uname -m`命令查看。
+- vendor: Linux: 通常是 `unknown`. Windows: `pc`. OSX/iOS: `apple`
+- system: 在类Unix系统上，您可以使用 `uname -s`命令查看。
 - ABI: 在Linux上，这是指libc实现，您可以通过 `ldd --version`命令查看。
     Mac 和 \*BSD 系统不提供multiple ABIs, 因此此字段被忽略. 在Windows, AFAIK 只有两个 ABIs: gnu 和 msvc.
 
-Next you need to compare this information against the targets supported by `rustc`, and check if
-there's a match. If you have a nightly-2016-02-14, 1.8.0-beta.1 or newer `rustc` you can use the
-`rustc --print target-list` command to get the full list of supported targets. Here's the list of
-supported targets as of 1.8.0-beta.1:
+接下来，您需要将此信息与Rustc支持的目标系统进行比较，并检查是否存在匹配项。 如果您有nightly-2016-02-14、1.8.0-beta.1或更高版本的`rustc`，则可以使用 `rustc --print target-list` 命令获取受支持目标的完整列表。 以下是从1.8.0-beta.1开始支持的目标系统的列表：
+
 
 ```
 $ rustc --print target-list | pr -tw100 --columns 3
