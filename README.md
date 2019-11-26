@@ -193,13 +193,6 @@ Similarly, I'll use the **$host** term to refer to the host triple. You can find
 
 `gcc` 的交叉编译器只针对单个triple。这个triple用于前缀所有toolchain命令：`ar`, `gcc`等。这有助于区分用于本机编译的工具（如 `gcc`）和交叉编译工具（如`arm-none-eabi-gcc`）。
 
-The confusing part is that triples can be quite arbitrary, so your C cross compiler will most likely
-be prefixed with a triple that's different from $rustc_target. For example, in Ubuntu the cross
-compiler for ARM devices is packaged as `arm-linux-gnueabihf-gcc`, the same cross compiler is
-prefixed as `armv7-unknown-linux-gnueabihf-gcc` in [Exherbo], and `rustc` uses the
-`arm-unknown-linux-gnueabihf` triple for that target. None of these triples match, but they refer to
-the same set of systems.
-
 令人困惑的是，triples可能是非常任意的，所以C交叉编译器很可能会以不同于$rustc_target的三元组作为前缀。例如，在Ubuntu中，ARM设备的交叉编译器被打包为 `arm-linux-gnueabihf-gcc` ，相同的交叉编译器在[Exherbo]中前缀为 `armv7-unknown-linux-gnueabihf-gcc`，并且 `rustc` 对该目标使用 `arm-unknown-linux-gnueabihf` triple。这些triple都不匹配，但它们引用的是同一组系统。
 
 [Exherbo]: http://exherbo.org/
