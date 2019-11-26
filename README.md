@@ -541,11 +541,6 @@ $ tree -d $(rustc --print sysroot)
         └── site-functions
 ```
 
-See that `lib/rustlib/$host` directory? That's where your native crates are stored. The cross
-compiled crates must be installed right next to that directory. Following the example from the
-previous section, the following command will copy the standard crates built by the RBS in the right
-place.
-
 看到 `lib/rustlib/$host` 目录了吗？那是你的本地crates存放的地方。交叉编译的crates必须安装在该目录的同级目录。按照上一节中的示例，下面的命令将在正确的位置复制RBS构建的standard crates。
 
 ```
