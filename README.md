@@ -172,16 +172,6 @@ i686-linux-android               powerpc64le-unknown-linux-gnu
 
 [创建目标描述文件]: #target-specification-files
 
-From this point forwards, I'll use the term **$rustc_target** to refer to the triple you found in
-this section. For example, if you found that your target is `arm-unknown-linux-gnueabihf`, then
-whenever you see something like `--target=$rustc_target` mentally expand the `$rustc_target` bit so
-you end with `--target=arm-unknown-linux-gnueaibhf`.
-
-Similarly, I'll use the **$host** term to refer to the host triple. You can find this triple in the
-`rustc -Vv` output under the host field. For example, my host system has triple
-`x86_64-unknown-linux-gnu`.
-
-
 从现在开始，我将使用术语 **$rustc_target** 来代指您在本节中找到的triple。例如，如果您发现您的目标系统是 `arm-unknown-linux-gnueabihf`，那么每当您看到诸如 `--target=$rustc_target` 之类的内容时，请自动脑补替换 `$rustc_target` 位，将其认为是 `--target=arm-unknown-linux-gnueaibhf`。
 
 类似地，我将使用 **$host** 术语来指代本地系统triple。您可以在命令 `rustc -Vv` 的输出中找到这个triple。例如，我的主机系统的triple是 `x86_64-unknown-linux-gnu`。
