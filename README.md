@@ -61,7 +61,7 @@ Hello, world!
 
 ## 目录
 
-本指南分为两个部分：“正文”和高级主题。 正文包括最简单的情况：将依赖于`std` crate 的Rust程序交叉编译为“受支持目标系统”（提供官方版本）。高级主题部分介绍了`no_std`程序，目标系统格式文件，如何交叉编译“standard crates”和常见故障排除。
+本指南分为两个部分：“正文”和高级主题。 正文包括最简单的情况：将依赖于`std` crate 的Rust程序交叉编译为“受支持目标系统”（提供官方版本）。高级主题部分介绍了`no_std`程序，目标系统specifications文件，如何交叉编译“standard crates”和常见故障排除。
 
 高级主题部分以正文中解释的信息为基础。因此，即使您的用例与正文所述的用例不同，您仍应在进入“高级主题”部分之前阅读该部分内容。
 
@@ -75,8 +75,8 @@ Hello, world!
 - [使用 `cargo` 交叉编译](#cross-compiling-with-cargo)
 - [高级主题](#advanced-topics)
     - [交叉编译standard crate](#cross-compiling-the-standard-crates)
-    - [安装交叉编译standard crates](#installing-the-cross-compiled-standard-crates)
-    - [目标系统格式文件](#target-specification-files)
+    - [安装交叉编译的standard crates](#installing-the-cross-compiled-standard-crates)
+    - [目标系统specifications文件](#target-specification-files)
     - [交叉编译 `no_std` 代码](#cross-compiling-no_std-code)
     - [常见问题](#troubleshooting-common-problems)
         - [can't find crate](#cant-find-crate)
@@ -115,7 +115,7 @@ Triples 通常有如下格式: `{arch}-{vendor}-{sys}-{abi}`。
 
 诸如RPi2，ODROIDs之类的系统以及几乎每个运行GNU / Linux的ARMv7开发板都属于这个triple。
 
-一些三元组省略了供应商或abi组件，因此它们实际上是真正的“三元组”。其中一个例子是 `x86_64-apple-darwin`, 这里:
+一些triple省略了供应商或abi组件，因此它们实际上是真正的“三元组”。其中一个例子是 `x86_64-apple-darwin`, 这里:
 
 - architecture: `x86_64`.
 - vendor: `apple`.
@@ -166,17 +166,11 @@ i686-apple-darwin                powerpc64-unknown-linux-gnu      x86_64-unknown
 i686-linux-android               powerpc64le-unknown-linux-gnu
 ```
 
-**NOTE** If you are wondering what's the difference between `arm-unknown-linux-gnueabihf` and
-`armv7-unknown-linux-gnueabihf`, the `arm` triple covers ARMv6 and ARMv7 processors whereas `armv7`
-only supports ARMv7 processors. For this reason, the `armv7` triple enables optimizations that are
-only possible on ARMv7 processors. OTOH, if you use the `arm` triple you would have to opt-in to
-these optimizations by passing extra flags like `-C target-feature=+neon` to `rustc`. TL;DR For
-faster binaries, use `armv7` if your target has an ARMv7 processor.
+ **NOTE** `arm-unknown-linux-gnueabihf` 和 `armv7-unknown-linux-gnueabihf` 之间的区别是： `arm` triple包括ARMv6和armv7处理器，而 `armv7` 只支持armv7处理器。因此，`armv7` triple支持仅适用于ARMv7处理器。如果你使用 `arm` triple，你就必须通过向 `rustc` 传递诸如 `-C target-feature=+neon` 这样的额外标志来选择这些优化。想要要获得更快的二进制文件，如果目标具有armv7处理器，请使用 `armv7`。
 
-If you didn't find a triple that matches your target system, then you are going to need to
-[create a target specification file].
+如果找不到与目标系统匹配的triple，则需要[创建目标specification文件]。
 
-[create a target specification file]: #target-specification-files
+[创建目标specification文件]: #target-specification-files
 
 From this point forwards, I'll use the term **$rustc_target** to refer to the triple you found in
 this section. For example, if you found that your target is `arm-unknown-linux-gnueabihf`, then
@@ -187,13 +181,17 @@ Similarly, I'll use the **$host** term to refer to the host triple. You can find
 `rustc -Vv` output under the host field. For example, my host system has triple
 `x86_64-unknown-linux-gnu`.
 
-### C cross toolchain
 
-Here things get a little confusing.
+从现在开始，我将使用术语 **$rustc_target** 来代指您在本节中找到的triple。例如，如果您发现您的目标系统是 `arm-unknown-linux-gnueabihf`，那么每当您看到诸如 `--target=$rustc_target` 之类的内容时，请自动脑补替换 `$rustc_target` 位，将其认为是 `--target=arm-unknown-linux-gnueaibhf`。
 
-`gcc` cross compilers only target a single triple. And this triple is used to prefix all the
-toolchain commands: `ar`, `gcc`, etc. This helps to distinguish a tool used for native compilation,
-e.g. `gcc`, from a cross compilation tool, e.g. `arm-none-eabi-gcc`.
+类似地，我将使用 **$host** 术语来指代本地系统triple。您可以在命令 `rustc -Vv` 的输出中找到这个triple。例如，我的主机系统的triple是 `x86_64-unknown-linux-gnu`。
+
+
+### C 交叉编译工具链
+
+从这里开始事情有点复杂起来。
+
+`gcc` 的交叉编译器只针对单个triple。这个triple用于前缀所有toolchain命令：`ar`, `gcc`等。这有助于区分用于本机编译的工具（如 `gcc`）和交叉编译工具（如`arm-none-eabi-gcc`）。
 
 The confusing part is that triples can be quite arbitrary, so your C cross compiler will most likely
 be prefixed with a triple that's different from $rustc_target. For example, in Ubuntu the cross
@@ -202,67 +200,53 @@ prefixed as `armv7-unknown-linux-gnueabihf-gcc` in [Exherbo], and `rustc` uses t
 `arm-unknown-linux-gnueabihf` triple for that target. None of these triples match, but they refer to
 the same set of systems.
 
+令人困惑的是，triples可能是非常任意的，所以C交叉编译器很可能会以不同于$rustc_target的三元组作为前缀。例如，在Ubuntu中，ARM设备的交叉编译器被打包为 `arm-linux-gnueabihf-gcc` ，相同的交叉编译器在[Exherbo]中前缀为 `armv7-unknown-linux-gnueabihf-gcc`，并且 `rustc` 对该目标使用 `arm-unknown-linux-gnueabihf` triple。这些triple都不匹配，但它们引用的是同一组系统。
+
 [Exherbo]: http://exherbo.org/
 
-The best way to confirm that you have the correct cross toolchain for your target system is to cross
-compile a C program, preferably something not trivial, and test executing it on the target system.
+确认目标系统具有正确的交叉编译工具链的最佳方法是交叉编译C程序（最好是一些不重要的程序），并在目标系统上测试执行它。
 
-As to where to get the C cross toolchain, that will depend on your system. Some Linux distributions
-provide packaged cross compilers. In other cases, you'll need to compile the cross compiler
-yourself. Tools like [crosstool-ng] can help with that endeavor. For Linux to OSX, check the
-[osxcross] project.
+至于在哪里得到C交叉编译工具链，这将取决于您的系统。一些Linux发行版提供了打包的交叉编译器。在其他情况下，您需要自己编译交叉编译器。像[crosstool ng]这样的工具可以帮助您实现这一目标。对于Linux到OSX，请查看[osxcross]项目。
 
 [crosstool-ng]: https://github.com/crosstool-ng/crosstool-ng
 [osxcross]: https://github.com/tpoechtrager/osxcross
 
-Some examples of packaged cross compilers below:
+下面是打包好的交叉编译器的一些示例：
 
-- For `arm-unknown-linux-gnueabi`, Ubuntu and Debian provide the `gcc-*-arm-linux-gnueabi` packages,
-  where `*` is gcc version. Example: `gcc-4.9-arm-linux-gnueabi`
-- For `arm-unknown-linux-gnueabihf`, same as above but replace `gnueabi` with `gnueabihf`
-- For OpenWRT devices, i.e. targets `mips-unknown-linux-uclibc` (15.05 and older) and
-    `mips-unknown-linux-musl` (post 15.05), use the [OpenWRT SDK]
-- For the Raspberry Pi, use the [Raspberry tools].
+- 对于 `arm-unknown-linux-gnueabi`, Ubuntu和Debian提供了 `gcc-*-arm-linux-gnueabi` 包,
+  其中 `*` 是gcc版本。例如： `gcc-4.9-arm-linux-gnueabi`
+- 对于 `arm-unknown-linux-gnueabihf`, 同上，但将 `gnueabi` 替换为 `gnueabihf`
+- 对于OpenWRT设备，即目标系统为 `mips-unknown-linux-uclibc` (15.05及更高版本) 和
+    `mips-unknown-linux-musl` (15.05之后), 使用 [OpenWRT SDK]
+- 对于Raspberry Pi（树莓派）, 使用 [Raspberry tools].
 
 [OpenWRT SDK]: https://wiki.openwrt.org/doc/howto/obtain.firmware.sdk
 [Raspberry tools]: https://github.com/raspberrypi/tools/tree/master/arm-bcm2708
 
-Note that the C cross toolchain will ship with a cross compiled libc for your target. Make sure
-that:
+请注意，C交叉编译工具链将为您的目标系统提供一个交叉编译的libc。确保：
 
-- The toolchain libc matches the target libc. Example, if your target uses the musl libc, then your
-    toolchain must also use the musl libc.
-- The toolchain libc is ABI compatible with the target libc. This usually means that the toolchain
-    libc must be older than the target libc. Ideally, both the toolchain libc and the target libc
-    should have the exact same version.
+- 工具链libc与目标系统libc匹配。例如，如果目标系统使用musl libc，则工具链必须使用musl libc。
+- 工具链libc与目标系统libc兼容。这通常意味着工具链libc版本必须低于于目标系统libc。理想情况下，工具链libc和目标系统libc应该具有完全相同的版本。
 
-From this point forwards, I'll use the term **$gcc_prefix** to refer to the prefix of the cross
-compilation tools (i.e. the cross toolchain) you installed in this section.
+从现在开始，我将使用术语 **$gcc_prefix** 来指代您在本节中安装的交叉编译工具（即交叉编译工具链）的前缀。
 
-### Cross compiled Rust crates
+### 交叉编译 Rust crates
 
-Most Rust programs link to the `std` crate, so at the very least you'll need a cross compiled `std`
-crate to cross compile your program. The easiest way to get it is from the [official builds].
+大多数Rust程序都链接到 `std` crate，因此至少需要交叉编译的 `std`
+crate 来交叉编译程序。最简单的方法来自[官方版本]。
 
-[official builds]: http://static.rust-lang.org/dist/
+[官方版本]: http://static.rust-lang.org/dist/
 
-If you are using multirust, as of 2016-03-08, you can install these crates with a single command:
-`multirust add-target nightly $rustc_target`. If you are using rustup.rs, use the command:
-`rustup target add $rustc_target`. And if you are using neither, follow the instructions below to
-install the crates manually.
+如果您使用的是multirust，从2016-03-08开始，您可以使用单条命令安装这些crates：`multirust add-target nightly $rustc_target`。如果您使用的是rustup.rs，请使用命令：`rustup target add $rustc_target`。如果两者都不想使用，请按照下面的说明手动安装crates。
 
-The tarball you want is `$date/rust-std-nightly-$rustc_target.tar.gz`. Where `$date` usually matches
-with the `rustc` commit date shown in `rustc -V`, although on occasion the dates may differ by one
-or a few days.
+你想要的tarball是 `$date/rust-std-nightly-$rustc_target.tar.gz`。其中，`$date`通常与 `rustc -V` 中显示的 `rustc` 提交日期匹配，尽管有时日期可能相差一天或几天。
 
-For example, for a `arm-unknown-linux-gnueabihf` target and a `rustc` with version (`rustc -V`)
-`rustc 1.8.0-nightly (3c9442fc5 2016-02-04)` this is the correct tarball:
+例如，对于 `arm-unknown-linux-gnueabihf` 目标系统，`rustc`具有版本（`rustc-V`） `rustc 1.8.0-nightly (3c9442fc5 2016-02-04)`。正确的tarbll是：
 
 ```
 http://static.rust-lang.org/dist/2016-02-04/rust-std-beta-arm-unknown-linux-gnueabihf.tar.gz
 ```
-
-To install the tarball use the `install.sh` script that's inside the tarball:
+要安装该tarball，请使用tarball中的 `install.sh` 脚本：
 
 ```
 $ tar xzf rust-std-nightly-arm-unknown-linux-gnueabihf.tar.gz
@@ -270,32 +254,26 @@ $ cd rust-std-nightly-arm-unknown-linux-gnueabihf
 $ ./install.sh --prefix=$(rustc --print sysroot)
 ```
 
-**WARNING** The above command will output a message that looks like this: "creating uninstall script
-at /some/path/lib/rustlib/uninstall.sh". Do **not** run that script because it will uninstall the
-cross compiled standard crates **and** the native standard crates; leaving you with an unusable Rust
-installation and you won't be able to compile natively.
+**WARNING**上述命令将输出如下消息："creating uninstall script
+at /some/path/lib/rustlib/uninstall.sh"。**不要** 运行该脚本，因为它将卸载交叉编译的standard crates 以及本地系统的standard crates；留下一个不可用的Rust安装，您将无法进行本机编译。
 
-If for some reason you need to uninstall the crates you just installed, simply remove the following
-directory: `$(rustc --print sysroot)/lib/rustlib/$rustc_target`.
+如果出于某种原因需要卸载刚刚安装的crates，只需删除以下目录：`$(rustc --print sysroot)/lib/rustlib/$rustc_target`。
 
-**NOTE** If you are using the nightly channel, every time you update your Rust install you'll have
-to install a new set of cross compiled standard crates. To do so, simply download a new tarball and
-use the `install.sh` script as before. AFAICT the script will also take care of removing the old set
-of crates.
+**NOTE**如果您使用nightly channel，每次更新Rust安装时，都必须安装一组新的交叉编译standard crates。为此，只需下载一个新tarball并像以前一样使用 `install.sh` 脚本。脚本将自动负责删除旧的crates。
 
-## Cross compiling with `rustc`
 
-This is the easy part!
+## 使用 `rustc` 交叉编译
 
-Cross compiling with `rustc` only requires passing a few extra flags to its invocation:
+下面部分开始变得容易！
 
-- `--target=$rustc_target`, tells `rustc` we are cross compiling for `$rustc_target`.
-- `-C linker=$gcc_prefix-gcc`, instructs `rustc` to use a cross linker instead of the native one
-    (`cc`).
+使用 `rustc` 交叉编译只需要向其调用传递几个额外的flags：
 
-Next, an example to test the cross compilation setup so far:
+- `--target=$rustc_target`, 告诉 `rustc` 我们正在为 `$rustc_target` 交叉编译。
+- `-C linker=$gcc_prefix-gcc`,指示 `rustc` 使用交叉链接器而不是本机的（`cc`）。
 
-- Create a hello world program on the host
+接下来是一个测试交叉编译设置的示例：
+
+- 在本地系统上创建hello world程序
 
 ```
 $ cat hello.rs
@@ -304,7 +282,7 @@ fn main() {
 }
 ```
 
-- Cross compile the program on the host
+- 在本地系统上交叉编译程序
 
 ```
 $ rustc \
@@ -313,7 +291,7 @@ $ rustc \
     hello.rs
 ```
 
-- Run the program on the target
+- 在目标系统上运行程序
 
 ```
 $ scp hello me@arm:~
@@ -321,28 +299,24 @@ $ ssh me@arm ./hello
 Hello, world!
 ```
 
-## Cross compiling with `cargo`
+## 使用 `cargo` 交叉编译
 
-To cross compile with cargo, we must first use its [configuration system] to set the proper linker
-and archiver for the target. Once set, we only need to pass the `--target` flag to cargo commands.
+要用cargo交叉编译，我们必须首先使用它的[配置系统]为目标系统设置正确的linker和archiver。一旦设置好，我们只需要将 `--target` 标志传递给cargo命令。
 
-[configuration system]: http://doc.crates.io/config.html
+[配置系统]: http://doc.crates.io/config.html
 
-Cargo configuration is stored in a TOML file, the key we are interested in is
-`target.$rustc_target.linker`. The value to store in this key is
-the same we passed to `rustc` in the previous section. It's up to you to decide if you make this
-configuration global or project specific.
+Cargo配置保存在一个TOML文件中，我们感兴趣的配置关键字是`target.$rustc_target.linker`。存储在此关键字中的值与我们在上一节中传递给 `rustc` 的值相同。由您决定是将此配置设置为全局配置还是特定于项目。
 
-Let's go over an example:
+让我们看一个例子：
 
-- Create a new binary Cargo project.
+- -创建新的二进制Cargo项目。
 
 ```
 $ cargo new --bin foo
 $ cd foo
 ```
 
-- Add a dependency to the project.
+- 向项目添加依赖项。
 
 ```
 $ echo 'clap = "2.0.4"' >> Cargo.toml
@@ -356,7 +330,7 @@ version = "0.1.0"
 clap = "2.0.4"
 ```
 
-- Configure the target linker and archiver only for this project.
+- 仅为此项目配置目标系统linker和archiver。
 
 ```
 $ mkdir .cargo
@@ -366,7 +340,7 @@ $ cat >.cargo/config <<EOF
 > EOF
 ```
 
-- Write the application
+- 编写应用程序
 
 ```
 $ cat >src/main.rs <<EOF
@@ -380,19 +354,19 @@ $ cat >src/main.rs <<EOF
 > EOF
 ```
 
-- Build the project for the target
+- 为目标系统构建项目
 
 ```
 $ cargo build --target=arm-unknown-linux-gnueabihf
 ```
 
-- Deploy the binary to the target
+- 将二进制文件部署到目标系统
 
 ```
 $ scp target/arm-unknown-linux-gnueabihf/debug/foo me@arm:~
 ```
 
-- Run the binary on the target.
+- 在目标系统上运行二进制文件。
 
 ```
 $ ssh me@arm ./foo -h
@@ -406,14 +380,11 @@ FLAGS:
     -V, --version    Prints version information
 ```
 
-## Advanced topics
+## 高级主题
 
-### Cross compiling the standard crates
+### 交叉编译standard crate
 
-Right now, you can only cross compile the standard crates if your target is supported by the Rust
-build system (RBS). You can find a list of all the supported targets in the [`mk/cfg`] directory
-(**NOTE** linked directory is **not** the latest revision). As of
-`rustc 1.8.0-nightly (3c9442fc5 2016-02-04)`, I see the following supported targets:
+现在，如果目标系统受Rust构建系统（RBS）支持，可以只交叉编译standard crates。您可以在[`mk/cfg`]目录中找到所有受支持目标的列表（**NOTE** 下面的链接是**不是**最新版本）。截至`rustc 1.8.0-nightly (3c9442fc5 2016-02-04)`，我看到以下支持的目标：
 
 [`mk/cfg`]: https://github.com/rust-lang/rust/tree/3c9442fc503fe397b8d3495d5a7f9e599ad63cf6/mk/cfg
 
@@ -434,29 +405,19 @@ i686-linux-android.mk             x86_64-apple-darwin.mk
 i686-pc-windows-gnu.mk            x86_64-apple-ios.mk
 ```
 
-**NOTE** If your target is not supported by the RBS, then you'll need to add support for your target
-to it. I won't go over the details of adding support for a new target, but you can use [this PR] as
-a reference.
+**NOTE** 如果RBS不支持您的目标系统，则需要在其中添加对目标系统的支持。我不会详细介绍为新目标系统添加支持的细节，但您可以使用[this PR]作为参考。
 
 [this PR]: https://github.com/rust-lang/rust/pull/31078
 
-**NOTE** If you are doing bare metal programming, building your own kernel or, in general, working
-with `#![no_std]` code, then you probably don't want to (and probably can't because there is no OS)
-build all the standard crates, but just the `core` crate and other freestanding crates. If that's
-your case, read the [Cross compiling `no_std` code] section instead of this one.
+**NOTE** 如果您正在进行裸机编程、构建自己的内核，或者通常使用 `#![no_std]` 代码，那么您可能不想（也可能不能，因为没有操作系统）构建所有的standard crates，而只构建 `core` crate和其他独立crate。如果是这种情况，请阅读[交叉编译'no_std'代码]部分而不是本部分。
 
-[Cross compiling `no_std` code]: #cross-compiling-no_std-code
+[交叉编译'no_std'代码]: #cross-compiling-no_std-code
 
-The steps for cross compiling the standard crates are not complicated, but the process of building
-them does take a very long time because the RBS will bootstrap a new compiler, and then use that
-bootstrapped compiler to cross compile the crates. Hopefully, the [upcoming] cargo-based build
-system will open the possibility of making this much faster by letting you use your already
-installed `rustc` and `cargo` to cross compile the standard crates.
+交叉编译standard crates的步骤并不复杂，但是构建它们的过程确实需要很长时间，因为RBS将引导一个新的编译器，然后使用引导的编译器交叉编译crates。希望[即将推出的]cargo-based的构建系统能够让您使用已经安装的 `rustc` 和 `cargo` 交叉编译standard crates，从而更快地实现这一点。
 
-[upcoming]: https://github.com/rust-lang/rust/pull/31123
+[即将推出的]: https://github.com/rust-lang/rust/pull/31123
 
-Back to the instructions, first you need to figure out the *commit hash* of your `rustc`. This
-is listed under the output of `rustc -Vv`. For example, this `rustc`:
+回到步骤说明中来，首先需要找出 `rustc` 的*commit hash*。这个显示在 `rustc -Vv`的输出下。例如：
 
 ```
 $ rustc -Vv
@@ -468,10 +429,9 @@ host: x86_64-unknown-linux-gnu
 release: 1.8.0-nightly
 ```
 
-Has commit hash: `3c9442fc503fe397b8d3495d5a7f9e599ad63cf6`.
+commit hash是: `3c9442fc503fe397b8d3495d5a7f9e599ad63cf6`.
 
-Next you need to fetch Rust source and check it out at that exact commit hash. Don't omit the
-checkout or you'll end with crates that are unusable by your compiler.
+接下来，您需要获取Rust源并使用该commit hash来checkout。不要省略checkout步骤，否则最后编译器会返回无法使用的crates。
 
 ```
 $ git clone https://github.com/rust-lang/rust
@@ -482,7 +442,7 @@ $ git rev-parse HEAD
 $rustc_commit_hash
 ```
 
-Next we prepare a build directory for an out of source build.
+接下来，我们将创建一个build目录。
 
 ```
 # Anywhere
@@ -490,32 +450,26 @@ $ mkdir build
 $ cd build
 $ /path/to/rust/configure --target=$rustc_target
 ```
+`configure` 接受许多其他配置flag，查看 `configure --help`了解更多信息。请注意，默认情况下，即没有任何flag，`configure` 也将准备完全优化构建。
 
-`configure` accepts many other configuration flags, check out `configure --help` for more
-information. Do note that by default, i.e. without any flag, `configure` will prepare a fully
-optimized build.
 
-Next we kick off the build:
+接下来我们开始构建：
 
 ```
 $ make -j$(nproc)
 ```
 
-If you hit this error during the build:
+如果在生成过程中遇到此错误：
 
 ```
 make[1]: $rbs_prefix-gcc: Command not found
 ```
 
-Don't `panic!`
+不要 `panic!`
 
-This happens because the RBS expects a gcc with a certain prefix for each target, but this prefix
-may not match the prefix of your installed cross compiler. For example, in my system, the installed
-cross compiler is `armv7-unknown-linux-gnueabihf-gcc`, but the RBS, when building for the
-`arm-unknown-linux-gnueabihf` target, expects the cross compiler to be named
-`arm-none-gnueabihf-gcc`.
+这是因为RBS希望每个目标都有一个具有特定前缀的gcc，但是这个前缀可能与您安装的交叉编译器的前缀不匹配。例如，在我的系统中，安装的交叉编译器是 `armv7-unknown-linux-gnueabihf-gcc`，但是RBS在为 `arm-unknown-linux-gnueabihf` 标构建时，希望交叉编译器命名为`arm-none-gnueabihf-gcc`。
 
-This can be easily fixed with some shim binaries:
+使用下面的方法可以很容易地解决这个问题：
 
 ```
 # In the build directory
@@ -526,8 +480,7 @@ $ ln -s $(which $gcc_prefix-gcc) $rbs_prefix-gcc
 $ cd ..
 $ export PATH=$(pwd)/.shims:$PATH
 ```
-
-Now you should be able to call both `$gcc_prefix-gcc` and `$rbs_prefix-gcc`. For example:
+现在您应该可以同时调用 `$gcc_prefix-gcc` 和 `$rbs_prefix-gcc`。例如：
 
 ```
 # My installed cross compiler
@@ -551,10 +504,10 @@ Thread model: posix
 gcc version 5.3.0 (GCC)
 ```
 
-You can now resume the build with `make -j$(nproc)`.
+现在可以使用 `make -j$(nproc)` 继续生成。
 
-Hopefully the build will complete successfully and your cross compiled crates will be available in
-the `$host/stage2/lib/rustlib/$rustc_target/lib` directory.
+祈祷构建将成功完成之后，交叉编译的crates将出现在 `$host/stage2/lib/rustlib/$rustc_target/lib` 目录中。
+
 
 ```
 # In the build directory
@@ -578,16 +531,14 @@ liblog-db5a760f.rlib             stamp.alloc_jemalloc             stamp.test
 liblog-db5a760f.so               stamp.alloc_system
 ```
 
-The next section will tell you how to install these crates in your Rust installation directory.
+下一节将告诉您如何在Rust安装目录中安装这些crates。
 
-### Installing the cross compiled standard crates
+### 安装交叉编译的standard crates
 
-First, we need to take a closer look at your Rust installation directory, whose path you can get
-with `rustc --print sysroot`:
+首先，我们需要仔细地查看Rust安装目录，使用 `rustc --print sysroot`可以找到它的路径：
 
 ```
-# I'm using rustup.rs, you'll get a different path if you used rustup.sh or your distro package
-# manager to install Rust
+# 我使用rustup.rs，如果使用rustup.sh或发行版包管理器安装Rust，您将得到一个不同的路径
 $ tree -d $(rustc --print sysroot)
 ~/.multirust/toolchains/nightly
 ├── bin
@@ -612,14 +563,16 @@ compiled crates must be installed right next to that directory. Following the ex
 previous section, the following command will copy the standard crates built by the RBS in the right
 place.
 
+看到 `lib/rustlib/$host` 目录了吗？那是你的本地crates存放的地方。交叉编译的crates必须安装在该目录的同级目录。按照上一节中的示例，下面的命令将在正确的位置复制RBS构建的standard crates。
+
 ```
-# In the 'build' directory
+# 在 'build' 目录中
 $ cp -r \
     $host/stage2/lib/rustlib/$target
     $(rustc --print sysroot)/lib/rustlib
 ```
 
-Finally, we check that the crates are in the right place.
+最后，我们检查crates是否在正确的位置。
 
 ```
 $ tree $(rustc --print sysroot)/lib/rustlib
@@ -640,48 +593,40 @@ $ tree $(rustc --print sysroot)/lib/rustlib
         └── (...)
 ```
 
-This way you can install crates for as many targets as you want. To "uninstall" the crates simply
-remove the $target directory.
+这样你可以为你想要的目标安装crates。要卸载crates，请简单地删除$target目录。
 
-### Target specification files
+### 目标系统specification文件
 
-A target specification file is a [JSON] file that provides detailed information about a target to
-the Rust compiler. This specification file has five required fields and several optional ones. All
-its keys are strings and its values are either strings or booleans. A minimal target spec file for
-Cortex M3 microcontrollers is shown below:
+目标系统specification文件是一个[JSON]文件，它向Rust编译器提供有关目标系统的详细信息。此specification文件有五个必需字段和几个可选字段。它的所有关键字都是字符串，其值要么是字符串，要么是布尔值。Cortex M3微控制器的最小目标系统specification文件如下所示：
 
 [JSON]: https://en.wikipedia.org/wiki/JSON
 
 ``` json
 {
-  "0": "NOTE: I'll use these 'numeric' fields as comments, but they shouldn't appear in these files",
-  "1": "The next five fields are _required_",
+  "0": "NOTE: 我将使用这些'数字'字段作为注释，但它们不应出现在这些文件中",
+  "1": "接下来的五个字段是 _必需的_",
   "arch": "arm",
   "llvm-target": "thumbv7m-none-eabi",
   "os": "none",
   "target-endian": "little",
   "target-pointer-width": "32",
 
-  "2": "These fields are optional. Not all the possible optional fields are listed here, though",
+  "2": "这些字段是可选的。但并非所有可能的可选字段都列在这里",
   "cpu": "cortex-m3",
   "morestack": false
 }
 ```
 
-A list of all the possible keys and their effect on compilation can be found in the
-[`src/librustc_back/target/mod.rs`] file (**NOTE**: the linked file is **not** the latest revision).
+所有可能的关键字及其对编译的影响的列表可以在[`src/librustc_back/target/mod.rs`]文件中找到（**NOTE**：该链接**不是**最新版本）。
 
 [`src/librustc_back/target/mod.rs`]: https://github.com/rust-lang/rust/blob/3c9442fc503fe397b8d3495d5a7f9e599ad63cf6/src/librustc_back/target/mod.rs#L70-L207
 
-There are two ways to pass these target specification files to `rustc`, the first is pass the full
-path via the `--target` flag.
+有两种方法可以将这些目标系统specification文件传递给 `rustc`，第一种是通过 `--target` flag传递完整路径。
 
 ```
 $ rustc --target path/to/thumbv7m-none-eabi.json (...)
 ```
-
-The other is to simply pass the ["file stem"] of the file to `--target`, but then the file must be
-in the working directory or in the directory specified by the `RUST_TARGET_PATH` variable.
+另一种方法是简单地将文件的["file stem"]传递给 `--target`，但该文件必须位于工作目录或由 `RUST_TARGET_PATH` 变量指定的目录中。
 
 ["file stem"]: http://doc.rust-lang.org/std/path/struct.Path.html#method.file_stem
 
@@ -694,7 +639,7 @@ thumbv7m-none-eabi.json
 $ rustc --target thumbv7m-none-eabi (...)
 ```
 
-### Cross compiling `no_std` code
+### 交叉编译 `no_std` 代码
 
 When working with `no_std` code you only want a few freestanding crates like `core`, and you are
 probably working with a custom target, e.g. a Cortex-M microcontroller, so there are no official
