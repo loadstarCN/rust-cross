@@ -76,7 +76,7 @@ Hello, world!
 - [高级主题](#advanced-topics)
     - [交叉编译standard crate](#cross-compiling-the-standard-crates)
     - [安装交叉编译的standard crates](#installing-the-cross-compiled-standard-crates)
-    - [目标系统specifications文件](#target-specification-files)
+    - [目标系统描述文件](#target-specification-files)
     - [交叉编译 `no_std` 代码](#cross-compiling-no_std-code)
     - [常见问题](#troubleshooting-common-problems)
         - [can't find crate](#cant-find-crate)
@@ -168,9 +168,9 @@ i686-linux-android               powerpc64le-unknown-linux-gnu
 
  **NOTE** `arm-unknown-linux-gnueabihf` 和 `armv7-unknown-linux-gnueabihf` 之间的区别是： `arm` triple包括ARMv6和armv7处理器，而 `armv7` 只支持armv7处理器。因此，`armv7` triple支持仅适用于ARMv7处理器。如果你使用 `arm` triple，你就必须通过向 `rustc` 传递诸如 `-C target-feature=+neon` 这样的额外标志来选择这些优化。想要要获得更快的二进制文件，如果目标具有armv7处理器，请使用 `armv7`。
 
-如果找不到与目标系统匹配的triple，则需要[创建目标specification文件]。
+如果找不到与目标系统匹配的triple，则需要[创建目标描述文件]。
 
-[创建目标specification文件]: #target-specification-files
+[创建目标描述文件]: #target-specification-files
 
 From this point forwards, I'll use the term **$rustc_target** to refer to the triple you found in
 this section. For example, if you found that your target is `arm-unknown-linux-gnueabihf`, then
@@ -595,9 +595,9 @@ $ tree $(rustc --print sysroot)/lib/rustlib
 
 这样你可以为你想要的目标安装crates。要卸载crates，请简单地删除$target目录。
 
-### 目标系统specification文件
+### 目标系统描述文件
 
-目标系统specification文件是一个[JSON]文件，它向Rust编译器提供有关目标系统的详细信息。此specification文件有五个必需字段和几个可选字段。它的所有关键字都是字符串，其值要么是字符串，要么是布尔值。Cortex M3微控制器的最小目标系统specification文件如下所示：
+目标系统描述文件是一个[JSON]文件，它向Rust编译器提供有关目标系统的详细信息。此描述文件有五个必需字段和几个可选字段。它的所有关键字都是字符串，其值要么是字符串，要么是布尔值。Cortex M3微控制器的最小目标系统描述文件如下所示：
 
 [JSON]: https://en.wikipedia.org/wiki/JSON
 
@@ -621,7 +621,7 @@ $ tree $(rustc --print sysroot)/lib/rustlib
 
 [`src/librustc_back/target/mod.rs`]: https://github.com/rust-lang/rust/blob/3c9442fc503fe397b8d3495d5a7f9e599ad63cf6/src/librustc_back/target/mod.rs#L70-L207
 
-有两种方法可以将这些目标系统specification文件传递给 `rustc`，第一种是通过 `--target` flag传递完整路径。
+有两种方法可以将这些目标系统描述文件传递给 `rustc`，第一种是通过 `--target` flag传递完整路径。
 
 ```
 $ rustc --target path/to/thumbv7m-none-eabi.json (...)
