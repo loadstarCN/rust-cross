@@ -4,7 +4,8 @@
 [travis]: https://travis-ci.org/japaric/rust-cross
 
 # `rust-cross`
-陆续翻译过程中... 在此之前请直接查看[英文版原文](https://github.com/japaric/rust-cross)
+有翻译的不明白的地方请直接查看[英文版原文](https://github.com/japaric/rust-cross)
+
 
 > 您需要了解有关交叉编译Rust程序的所有知识！
 
