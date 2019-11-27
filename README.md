@@ -66,34 +66,34 @@ Hello, world!
 高级主题部分以正文中解释的信息为基础。因此，即使您的用例与正文所述的用例不同，您仍应在进入“高级主题”部分之前阅读该部分内容。
 
 
-- [术语](#terminology)
-- [必要条件](#requirements)
-    - [目标系统triple](#the-target-triple)
-    - [C 交叉编译工具链](#c-cross-toolchain)
-    - [交叉编译 Rust crates](#cross-compiled-rust-crates)
-- [使用 `rustc` 交叉编译](#cross-compiling-with-rustc)
-- [使用 `cargo` 交叉编译](#cross-compiling-with-cargo)
-- [高级主题](#advanced-topics)
-    - [交叉编译standard crate](#cross-compiling-the-standard-crates)
-    - [安装交叉编译的standard crates](#installing-the-cross-compiled-standard-crates)
-    - [目标系统描述文件](#target-specification-files)
-    - [交叉编译 `no_std` 代码](#cross-compiling-no_std-code)
-    - [常见问题](#troubleshooting-common-problems)
+- [术语](#术语)
+- [必要条件](#必要条件)
+    - [目标系统triple](#目标系统triple)
+    - [C 交叉编译工具链](#C_交叉编译工具链)
+    - [交叉编译 Rust crates](#交叉编译_Rust_crates)
+- [使用 `rustc` 交叉编译](#使用_`rustc`_交叉编译)
+- [使用 `cargo` 交叉编译](#使用_`cargo`_交叉编译)
+- [高级主题](#高级主题)
+    - [交叉编译standard crate](#交叉编译standard_crate)
+    - [安装交叉编译的standard crates](#安装交叉编译的standard_crates)
+    - [目标系统描述文件](#目标系统描述文件)
+    - [交叉编译 `no_std` 代码](#交叉编译_`no_std`_代码)
+    - [解决常见问题](#解决常见问题)
         - [can't find crate](#cant-find-crate)
         - [crate incompatible with this version of rustc](#crate-incompatible-with-this-version-of-rustc)
         - [undefined reference](#undefined-reference)
         - [can't load library](#cant-load-library)
         - [`$symbol` not found](#symbol-not-found)
         - [illegal instruction](#illegal-instruction)
-- [FAQ](#faq)
-    - [我想为Linux，Mac和Windows构建二进制文件。 如何从Linux交叉编译到Mac？](#i-want-to-build-binaries-for-linux-mac-and-windows-how-do-i-cross-compile-from-linux-to-mac)
-    - [如何编译完全静态链接的Rust二进制文件](#how-do-i-compile-a-fully-statically-linked-rust-binaries)
-- [License](#license)
-    - [贡献](#contribution)
+- [FAQ](#FAQ)
+    - [我想为Linux，Mac和Windows构建二进制文件。 如何从Linux交叉编译到Mac?](#我想为Linux，Mac和Windows构建二进制文件。 如何从Linux交叉编译到Mac？)
+    - [如何编译完全静态链接的Rust二进制文件?](#如何编译完全静态链接的Rust二进制文件?)
+- [许可证](#许可证)
+    - [贡献](#贡献)
 
 ## 术语
 
-首先定义一些术语，以确保我们使用的是同一种语言！
+首先定义一些术语，以确保我们在说的是同一件事情！
 
 交叉编译最基本的形式涉及两个不同的系统/计算机/设备。 编译程序的 **本地** 系统和执行编译后的程序的 **目标** 系统。
 
@@ -609,135 +609,120 @@ $ rustc --target path/to/thumbv7m-none-eabi.json (...)
 ["file stem"]: http://doc.rust-lang.org/std/path/struct.Path.html#method.file_stem
 
 ```
-# Target specification file is in the working directory
+# 目标系统描述文件在工作目录中
 $ ls thumbv7m-none-eabi.json
 thumbv7m-none-eabi.json
 
-# Passing just the "file stem" works
+# 仅传递 "file stem" 即可
 $ rustc --target thumbv7m-none-eabi (...)
 ```
 
 ### 交叉编译 `no_std` 代码
 
-When working with `no_std` code you only want a few freestanding crates like `core`, and you are
-probably working with a custom target, e.g. a Cortex-M microcontroller, so there are no official
-builds for your target nor can you build these crates using the RBS.
+使用 `no_std` 代码时，您只需要几个独立的crates，例如 `core`，并且您可能正在使用自定义目标系统，例如 Cortex-M微控制器，因此没有针对您的目标的官方构建，也无法使用RBS构建这些crates。
 
-A simple solution to get a cross compiled `core` crate is to make your program/crate depend on the
-[`rust-libcore`] crate. This will make Cargo build the `core` crate as part of the `cargo build`
-process. However, this approach has two problems:
+一个获得交叉编译的 `core` crate的简单解决方案是使您的程序/crate依赖于[`rust-libcore`]crate。 这将使Cargo在 `cargo build`过程中构建 `core` crate。 但是，此方法有两个问题：
 
 [`rust-libcore`]: https://crates.io/crates/rust-libcore
 
-- Virality: You can't make your crate depend on another `no_std` crate unless that crate also
-    depends on `rust-libcore`.
+- 传染性：您不能使自己的crate依赖于另一个 `no_std` crate，除非该crate也取依赖于 `rust-libcore`。
 
-- If you want your crate to depend on another standard crate then a new `rust-lib$crate` crate would
-    need to be created.
+- 如果您希望自己的crate依赖于另一个standard crate，则需要创建一个新的`rust-lib$crate` crate。
 
-An alternative solution that doesn't have these problems is to use a "sysroot" that holds the cross
-compiled crates. I'm implementing this approach in [`xargo`]. For more details check the repository.
+避免这些问题的替代解决方案是使用"sysroot"来保存交叉编译的crates。 我正在[`xargo`]中实现这种方法。有关更多详细信息，请查看代码仓库。
 
 [`xargo`]: https://github.com/japaric/xargo
 
-### Troubleshooting common problems
+### 解决常见问题
 
-> Anything that can go wrong, will go wrong -- Murphy's law
+> 任何可能出错的地方一定会出错-墨菲定律
 
-This section: What to do when things go wrong.
+本节：出现问题时的解决方法
 
 #### can't find crate
 
-**Symptom**
+**症状**
 
 ```
 $ cargo build --target $rustc_target
 error: can't find crate for `$crate`
 ```
 
-**Cause**
+**原因**
 
-`rustc` can't find the cross compiled standard crate `$crate` in your Rust installation directory.
+`rustc` 在您的Rust安装目录中找不到交叉编译过的 standard crate `$crate`。
 
-**Solution**
+**解决方案**
 
-Check the [Installing the cross compiled standard crates] section and make sure the cross compiled
-`$crate` crate is in the right place.
+检查[安装交叉编译的standard crates]部分，并确保交叉编译的`$crate` crate 在正确的位置。
 
-[Installing the cross compiled standard crates]: #installing-the-cross-compiled-standard-crates
+[安装交叉编译的standard crates]: #installing-the-cross-compiled-standard-crates
 
 #### crate incompatible with this version of rustc
 
-**Symptom**
+**症状**
 
 ```
 $ cargo build --target $rustc_target
 error: the crate `$crate` has been compiled with rustc $version-$channel ($hash $date), which is incompatible with this version of rustc
 ```
 
-**Cause**
+**原因**
 
-The version of the cross compiled standard crates that you installed don't match your `rustc`
-version.
+您安装的交叉编译standard crates的版本与您的`rustc`版本不匹配。
 
-**Solution**
+**解决方案**
 
-If you are on the nightly channel and installed an official build, you probably got the date of the
-tarball wrong. Try a different date.
+如果您在nightly channel上并安装了官方版本，则可能是错误的压缩包日期。 尝试其他日期。
 
-[official build]: http://static.rust-lang.org/dist/
+[官方版本]: http://static.rust-lang.org/dist/
 
-If you cross compiled the crates from source, then you checked out the wrong commit of the source.
-You'll have the build the crates again, but making sure you check out the repository at the right
-commit (it must match the commit-hash field of `rustc -Vv` output).
+如果您从源代码交叉编译了crates，则您检查出了源代码的错误提交。
+必须重新build crates，但要确保从正确的提交的版本库check out（它必须与 `rustc -Vv` 输出的commit-hash字段匹配）。
 
 #### undefined reference
 
-**Symptom**
+**症状**
 
 ```
 $ cargo build --target $rustc_target
 /path/to/some/file.c:$line: undefined reference to `$symbol`
 ```
 
-**Cause**
+**原因**
 
-The scenario goes like this:
+场景如下：
 
-- The standard crates were cross compiled using a C cross toolchain "A".
-- Then you cross compile a Rust program using C cross toolchain "B", this program was also linked to
-    the standard crates produced in the previous step.
+- 使用C交叉工具链"A"对standard crates进行交叉编译。
+- 然后使用C交叉工具链"B"交叉编译Rust程序，该程序也链接到上一步中生成的standard crates。
 
-The problem occurs when the libc component of toolchain "A" is newer than the libc component of
-toolchain "B". In this case, the standard crates cross compiled with "A" may depend on libc symbols
-that are not available in "B"'s libc.
+当工具链"A"的libc组件比工具链"B"的libc组件新时，就会出现问题。 在这种情况下，用"A"交叉编译的standard crates可能依赖的libc符号
+在"B"的libc中不可用。
 
-This error will also occur if "A"'s libc is different from "B"'s libc. Example: toolchain "A" is
-`mips-linux-gnu` and toolchain "B" is `mips-linux-musl`.
+如果"A"的libc与"B"的libc不同，也会发生此错误。 示例：工具链"A"是 `mips-linux-gnu`，工具链"B"是 `mips-linux-musl`。
 
-**Solution**
 
-If you observe this with a [official build], that's a [bug]. It indicates that the Rust team must
-downgrade the libc component of the C cross toolchain they are using to build the standard crates.
+**解决方案**
+
+如果您发现这是[官方版本]，那就是[bug]。这表明Rust团队必须降级他们用来构建standard crates的C跨工具链的libc组件。
 
 [bug]: https://github.com/rust-lang/rust/issues/30966
 
-If you are cross compiling the standard crates yourself, then it would be ideal if you use the same
-C cross toolchain to build the standard crates and to cross compile Rust programs.
+如果您自己交叉编译standard crates，那么最好使用相同的C交叉工具链来构建standard crates和交叉编译Rust程序。
 
 #### can't load library
 
-**Symptom**
+**症状**
 
 ```
-# On target
+# 在目标系统
 $ ./hello
 ./hello: can't load library 'libpthread.so.0'
 ```
 
-**Cause**
+**原因**
 
-Your target system is missing a shared library. You can confirm this with `ldd`:
+您的目标系统缺少共享库。 您可以通过 `ldd` 来确认：
 
 ```
 # Or `LD_TRACE_LOADED_OBJECTS=1 ./hello` on uClibc-based OpenWRT devices
@@ -750,11 +735,11 @@ $ ldd hello
         libm.so.0 => /lib/libm.so.0 (0x77103000)
 ```
 
-All the missing libraries are marked with "not found".
+所有缺少的库都标记为"not found"。
 
-**Solution**
+**解决方案**
 
-Install the missing shared libraries in your target system. Continuing the previous example:
+在目标系统中安装缺少的共享库。 继续前面例子：
 
 ```
 # target system is an OpenWRT device
@@ -765,84 +750,68 @@ Hello, world!
 
 #### `$symbol` not found
 
-**Symptom**
+**症状**
 
 ```
-# On target
+# 在目标系统
 $ ./hello
 rustc: /path/to/$c_library.so: version `$symbol' not found (required by /path/to/$rust_library.so).
 ```
 
-**Cause**
+**原因**
 
-ABI mismatch between the library that was dynamically linked to the binary during cross compilation
-and the library that's installed in the target.
+在交叉编译过程中动态链接到二进制文件的库与目标中安装的库之间的ABI不匹配。
 
-**Solution**
+**解决方案**
 
-Update/change the library on either the host or the target to make them both ABI compatible.
-Ideally, the host and the target should have the same library version.
+更新/更改本地系统或目标系统上的库，使它们都与ABI兼容。 理想情况下，本地系统或目标系统应具有相同的库版本。
 
-**NOTE** When I say the library on the host, I'm referring to *the cross compiled library* that
-the `$prefix_gcc-gcc` is linking into your Rust program. I'm **not** referring to the **native**
-library that may be installed in the host.
+**NOTE** 当我说本地系统上的库时，我指的是 `$prefix_gcc-gcc` 链接到您的Rust程序的**交叉编译库**。 我**不是**指可能安装在本地系统中的**本地**库。
 
 #### illegal instruction
 
-**Symptom**
+**症状**
 
 ```
-# on target
+# 在目标系统
 $ ./hello
 Illegal instruction
 ```
 
-**Causes**
+**原因**
 
-**NOTE** You can also get an "illegal instruction" error if your program reaches an Out Of Memory
-(OOM) condition. In some systems, you will additionally see an "fatal runtime error: out of memory"
-message when you hit OOM. If you are sure that's not your case, then this is a cross compilation
-problem.
+**NOTE** 如果您的程序达到内存溢出（OOM）条件，您还会收到"illegal instruction"错误。 在某些系统中，还会看到"fatal runtime error: out of memory"消息。如果确定不是您代码的bug，那么这是一个交叉编译问题。
 
-This occurs because your program contains an [instruction] that's not supported by your target
-system. Among the possible causes of this problem we have:
+发生这种情况是因为您的程序包含目标系统不支持的[指令]。 在此问题的可能原因有：
 
-[instruction]: https://simple.wikipedia.org/wiki/Instruction_(computer_science)
+[指令]: https://simple.wikipedia.org/wiki/Instruction_(computer_science)
 
-- You are compiling for a hard float target, e.g. `arm-unknown-linux-gnueabihf`, but your target
-    doesn't support hard float operations and it's actually a soft float target, e.g.
-    `arm-unknown-linux-gnueabi`. **Solution**: Use the right triple, in this example:
+- 您正在针对硬浮点目标系统进行编译，例如 `arm-unknown-linux-gnueabihf`，但您的目标系统不支持硬浮点操作，而实际上是一个软浮点目标，例如 `arm-unknown-linux-gnueabi`。
+    **解决方案**: 使用正确的triple，例如:
     `arm-unknown-linux-gnueabi`.
 
-- You are using the right soft float triple, e.g. `arm-unknown-linux-gnueabi`, for your target
-    system. But your C cross toolchain was compiled with hard float support and is injecting hard
-    float instructions into your binary. **Solution**: Get the correct toolchain, one that was built
-    with soft float support. Hint: look for the flag `--with-float` in the output of
-    `$gcc_prefix-gcc -v`.
+- 您正在使用正确的软浮点triple，例如 `arm-unknown-linux-gnueabi`，用于您的目标系统。 但是您的C跨工具链是使用硬浮点支持编译的，并且正在将硬浮点指令注入到您的二进制文件中。
+    **解决方案**: 使用正确的工具链，该工具链是使用软浮动支持构建的。 提示：在`$gcc_prefix-gcc -v`输出中寻找标志--with-float。
 
 ## FAQ
 
-### I want to build binaries for Linux, Mac and Windows. How do I cross compile from Linux to Mac?
+### 我想为Linux，Mac和Windows构建二进制文件。 如何从Linux交叉编译到Mac?
 
-Short answer: You don't.
+简短的回答：没有办法。
 
-It's hard to find a cross C toolchain (and cross compiled C libraries) between different OSes
-(except perhaps from Linux to Windows). A much simpler and less error prone way is to build natively
-for these targets because they are [tier 1] platforms. You may not have direct access to all these
-OSes but that's not a problem because you can use CI services like [Travis CI] and [AppVeyor]. Check
-my [rust-everywhere] project for instructions on how to do that.
+很难在不同的操作系统之间找到一个交叉编译C工具链（和交叉编译的C库）（除了从Linux到Windows）。 一种更简单，更不易出错的方法是为这些目标系统本地构建，因为它们是[tier 1]平台。 您可能没有直接访问所有这些OS的权限，但这不是问题，因为您可以使用[Travis CI]和[AppVeyor]等CI服务。 检查[rust-everywhere]项目，以获取有关如何执行此操作的说明。
+
 
 [tier 1]: https://doc.rust-lang.org/book/getting-started.html#tier-1
 [Travis CI]: https://travis-ci.org/
 [AppVeyor]: https://www.appveyor.com/
 [rust-everywhere]: https://github.com/japaric/rust-everywhere
 
-### How do I compile a fully statically linked Rust binaries?
+### 如何编译完全静态链接的Rust二进制文件?
 
-Short answer: `cargo build --target x86_64-unknown-linux-musl`
+简短的回答：`cargo build --target x86_64-unknown-linux-musl`
 
-For targets of the form `*-*-linux-gnu*`, `rustc` always produces binaries dynamically linked to
-`glibc` and other libraries:
+对于 `*-*-linux-gnu*` 形式的目标系统，`rustc` 总是生成动态链接到 `glibc` 和其他库的二进制文件：
 
 ```
 $ cargo new --bin hello
@@ -859,9 +828,9 @@ $ ldd target/x86_64-unknown-linux-gnu/debug/hello
         libm.so.6 => /usr/x86_64-pc-linux-gnu/lib/libm.so.6 (0x00007fc4b2272000)
 ```
 
-To produce statically linked binaries, Rust provides two targets:
-`x86_64-unknown-linux-musl` and `i686-unknown-linux-musl`. The binaries produced for these targets
-are statically linked to the MUSL C library. Example below:
+为了产生静态链接的二进制文件，Rust提供了两个targets：
+x86_64-unknown-linux-musl和i686-unknown-linux-musl。 
+为这些目标生成的二进制文件静态链接到MUSL C库。
 
 ```
 $ cargo new --bin hello
@@ -874,18 +843,15 @@ $ ldd target/x86_64-unknown-linux-musl/debug/hello
         not a dynamic executable
 ```
 
-## License
+## 许可证
 
-Licensed under either of
+您可以选择以下任一许可。
 
 - Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or
   http://www.apache.org/licenses/LICENSE-2.0)
 - MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
 
-at your option.
 
-### Contribution
+### 贡献
 
-Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the
-work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any
-additional terms or conditions.
+除非您明确声明，否则您有意提交以供您包含在工作中的任何贡献（按照Apache-2.0许可的定义）均应按上述双重授权，且无任何其他条款或条件。
